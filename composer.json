@@ -1,0 +1,63 @@
+{
+    "name": "zhylon/zhylon-id-client",
+    "description": "Server-to-server client for the ZhylonID identity API (user existence checks, ecosystem user sync).",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["zhylon", "laravel", "oauth2", "identity", "sso", "eu-hosted"],
+    "homepage": "https://github.com/zhylon/zhylon-id-client",
+    "support": {
+        "issues": "https://github.com/zhylon/zhylon-id-client/issues",
+        "source": "https://github.com/zhylon/zhylon-id-client"
+    },
+    "authors": [
+        {
+            "name": "Toby Maxham",
+            "homepage": "https://zhylon.net",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "illuminate/support": "^11.0|^12.0|^13.0",
+        "illuminate/http": "^11.0|^12.0|^13.0",
+        "illuminate/console": "^11.0|^12.0|^13.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.30",
+        "orchestra/testbench": "^9.0|^10.0",
+        "pestphp/pest": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Zhylon\\ZhylonIdService\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Zhylon\\ZhylonIdService\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": [
+            "./vendor/bin/pest tests/"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Zhylon\\ZhylonIdService\\ZhylonIdServiceProvider"
+            ],
+            "aliases": {
+                "ZhylonId": "Zhylon\\ZhylonIdService\\Facades\\ZhylonIdService"
+            }
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}
