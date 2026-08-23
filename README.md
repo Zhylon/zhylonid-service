@@ -32,7 +32,7 @@ ZHYLONID_SERVICE_CLIENT_SECRET=your-client-secret
 ZHYLONID_SERVICE_SCOPE="internal.read internal.write"
 
 # Only for the `zhylon-id:sync-users` command:
-ZHYLONID_SERVICE_USER_MODEL="App\Models\User"
+ZHYLONID_SERVICE_USER_MODEL="App\\Models\\User"
 ZHYLONID_SERVICE_ID_COLUMN=zhylon_id
 ZHYLONID_SERVICE_PROVIDER=sitealarm
 ```
