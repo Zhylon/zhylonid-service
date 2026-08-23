@@ -11,7 +11,7 @@ OAuth2 login/SSO integration for end users — for "Login with ZhylonID" use
 ## Installation
 
 ```bash
-composer require zhylon/zhylon-id-client
+composer require zhylon/zhylonid-service
 ```
 
 Laravel's package auto-discovery registers the service provider and `ZhylonId` facade

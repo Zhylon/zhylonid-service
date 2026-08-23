@@ -1,13 +1,13 @@
 {
-    "name": "zhylon/zhylon-id-client",
+    "name": "zhylon/zhylonid-service",
     "description": "Server-to-server client for the ZhylonID identity API (user existence checks, ecosystem user sync).",
     "type": "library",
     "license": "MIT",
     "keywords": ["zhylon", "laravel", "oauth2", "identity", "sso", "eu-hosted"],
-    "homepage": "https://github.com/zhylon/zhylon-id-client",
+    "homepage": "https://github.com/zhylon/zhylonid-service",
     "support": {
-        "issues": "https://github.com/zhylon/zhylon-id-client/issues",
-        "source": "https://github.com/zhylon/zhylon-id-client"
+        "issues": "https://github.com/zhylon/zhylonid-service/issues",
+        "source": "https://github.com/zhylon/zhylonid-service"
     },
     "authors": [
         {
