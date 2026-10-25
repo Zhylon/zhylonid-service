@@ -19,3 +19,8 @@ config (`.env`-sourced). It never writes secrets to logs, cache values, or excep
 messages. If you believe a secret has leaked through this package (e.g. via an exception
 message, log line, or cached value), please report it as a vulnerability — that is a bug
 in this package, not expected behavior.
+
+The client fails closed by default (`on_failure=block`): if ZhylonID cannot give a
+trustworthy answer, it throws instead of reporting "user does not exist". A code path that
+silently treats an unreachable ZhylonID as "user does not exist" while `block` is set is
+also a bug worth reporting.

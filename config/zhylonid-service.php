@@ -18,7 +18,16 @@ return [
 
     'user_agent' => env('ZHYLONID_SERVICE_USER_AGENT', config('app.name').'/1.0'),
 
-    'http_timeout' => env('ZHYLONID_SERVICE_HTTP_TIMEOUT', 10),
+    // What happens when ZhylonID is unreachable or answers with an error:
+    // "block" (default) throws ZhylonIdUnavailableException, so registrations and
+    // email changes stop (DECISION-011). "allow" returns the negative result
+    // (e.g. userExists() === false) and logs a warning. Only set "allow" on purpose.
+    // Any other value is treated as "block".
+    'on_failure' => env('ZHYLONID_SERVICE_ON_FAILURE', 'block'),
+
+    // Seconds. Kept short: these calls sit in the user's registration request.
+    'http_timeout'    => (int) env('ZHYLONID_SERVICE_HTTP_TIMEOUT', 5),
+    'connect_timeout' => (int) env('ZHYLONID_SERVICE_CONNECT_TIMEOUT', 2),
 
     // Slightly under 3600s so the token is refreshed before Passport expires it.
     'token_cache_ttl' => env('ZHYLONID_SERVICE_TOKEN_TTL', 3500),
