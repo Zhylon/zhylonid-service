@@ -26,6 +26,10 @@ dataset('failures', [
         fn () => fakeToken() + [ZHYLON_LOOKUP_URL => Http::response(['message' => 'SENSITIVE-BODY-MARKER'], 404)],
         FailureReason::UnexpectedStatus, 404,
     ],
+    '404 route_not_found (older ZhylonID)' => [
+        fn () => fakeToken() + [ZHYLON_LOOKUP_URL => Http::response(['errors' => [['status' => '404', 'code' => 'route_not_found']]], 404)],
+        FailureReason::UnexpectedStatus, 404,
+    ],
     'timeout' => [
         fn () => fakeToken() + [ZHYLON_LOOKUP_URL => Http::failedConnection('cURL error 28: Operation timed out after 5001 milliseconds')],
         FailureReason::Timeout, null,

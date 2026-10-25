@@ -97,9 +97,10 @@ class SyncWithZhylonIdCommand extends Command
                 continue;
             }
 
-            // Forward compatible: if ZhylonID says the account already existed
-            // (created between our check and the push), do not link it.
-            if (false === ($zhylonUser['created'] ?? null)) {
+            // Only link accounts this request created. "created: false" means the
+            // account already existed (e.g. created between our check and the push).
+            // A missing flag counts as "not created": fail closed.
+            if (true !== ($zhylonUser['created'] ?? null)) {
                 $this->warn("Not linked, account already existed in ZhylonID: {$zhylonUser['email']}");
 
                 continue;

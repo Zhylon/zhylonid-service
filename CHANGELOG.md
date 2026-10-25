@@ -3,7 +3,7 @@
 All notable changes to this package are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/), versioning is semver.
 
-## [2.0.0] - Unreleased
+## [2.0.0] - 2026-10-25
 
 ZhylonID unavailability is no longer reported as "user does not exist". The package now
 decides this consistently for all apps (DECISION-011). See [UPGRADE.md](UPGRADE.md).
@@ -51,8 +51,9 @@ decides this consistently for all apps (DECISION-011). See [UPGRADE.md](UPGRADE.
 ### Changed
 - A 401 from the internal API removes the cached access token, so the next call fetches a
   fresh one. Token caching itself is unchanged. Failure results are never cached.
-- The sync command only links users that ZhylonID did not report as already existing
-  (`created: false` in the sync response is respected once ZhylonID sends it).
+- The sync command only links users that ZhylonID reports as created by this request
+  (`created: true` in the sync response). `created: false` or a missing flag is never
+  linked, which also covers an account created between the check and the push.
 
 ### Security
 - Failure logs contain only `operation`, `reason` and HTTP `status`. No response bodies,

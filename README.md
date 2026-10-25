@@ -137,7 +137,8 @@ if ($zhylonUser?->emailVerified) {
 ```
 
 Both return `id`, `name`, `email`, `emailVerified` and `pendingEmailChange` (`newEmail`,
-`expiresAt`), and `null` for an unknown user (JSON:API `not_found`). Any other 404 counts as a failure.
+`expiresAt`), and `null` for an unknown user (JSON:API `not_found`). Any other 404, e.g.
+`route_not_found` from a ZhylonID without these routes, counts as a failure.
 `emailVerified` is `true` only when the owner proved the address. Users created or synced
 by a product start unverified, so **only trust `email` for account linking when
 `emailVerified` is `true`**. With `on_failure=allow`, an outage also returns `null`, which
@@ -195,9 +196,9 @@ checks each email with `userExists()`:
 unavailable, the command fails and writes nothing. It refuses to run while
 `on_failure=allow` is set, because a bulk sync must always fail closed.
 
-Known gap: an account created in ZhylonID between the check and the push is still returned
-by ZhylonID and linked. This is closed once the sync endpoint reports `created: false`,
-which the command already respects.
+Only accounts that ZhylonID reports as `created: true` for this request are linked. An
+account created in ZhylonID between the check and the push comes back as `created: false`
+and stays unlinked, like every other conflict.
 
 Requires the configured `zhylonid-service.sync.user_model` to expose `id`, `name`, `email`,
 and the id column.

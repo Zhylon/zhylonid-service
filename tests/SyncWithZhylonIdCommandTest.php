@@ -38,9 +38,10 @@ function fakeZhylonIdForSync(): void
             : lookupNotFound(),
         ZHYLON_SYNC_URL => fn (Request $request) => Http::response(
             collect($request['users'])->map(fn ($u) => [
-                'id'    => 'zid_'.md5($u['email']),
-                'name'  => $u['name'],
-                'email' => $u['email'],
+                'id'      => 'zid_'.md5($u['email']),
+                'name'    => $u['name'],
+                'email'   => $u['email'],
+                'created' => true,
             ])->values()->all(),
             200,
         ),
@@ -139,4 +140,19 @@ it('reports when no users need syncing', function () {
     $this->artisan('zhylon-id:sync-users')
         ->expectsOutputToContain('No users without a ZhylonID found.')
         ->assertExitCode(0);
+});
+
+it('does not link a user when the server omits the created flag', function () {
+    Http::fake(fakeToken() + [
+        ZHYLON_LOOKUP_URL => lookupNotFound(),
+        ZHYLON_SYNC_URL   => Http::response([
+            ['id' => 'zid_nora', 'name' => 'New Nora', 'email' => 'new@example.com'],
+        ], 200),
+    ]);
+
+    $this->artisan('zhylon-id:sync-users')
+        ->expectsOutputToContain('0 user(s) created and linked')
+        ->assertExitCode(0);
+
+    expect(zhylonIds()['new@example.com'])->toBeNull();
 });
