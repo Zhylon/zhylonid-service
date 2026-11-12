@@ -5,6 +5,7 @@ namespace Zhylon\ZhylonIdService\Services;
 use Throwable;
 use RuntimeException;
 use DateTimeImmutable;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -331,7 +332,14 @@ class ZhylonIdManager implements ZhylonIdServiceContract
             pendingEmailChange: is_array($pending) && is_string($pending['new_email'] ?? null)
                 ? new PendingEmailChange($pending['new_email'], $this->parseDate($pending['expires_at'] ?? null))
                 : null,
+            personalOrgUuid: $this->parseUuid($attributes['personal_org_uuid'] ?? null),
         );
+    }
+
+    /** Older ZhylonID versions do not send the field; anything that is not a uuid counts as missing. */
+    private function parseUuid(mixed $value): ?string
+    {
+        return is_string($value) && Str::isUuid($value) ? strtolower($value) : null;
     }
 
     private function assertZhylonId(string $zhylonId): string

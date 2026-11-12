@@ -136,7 +136,7 @@ if ($zhylonUser?->emailVerified) {
 }
 ```
 
-Both return `id`, `name`, `email`, `emailVerified` and `pendingEmailChange` (`newEmail`,
+Both return `id`, `name`, `email`, `emailVerified`, `personalOrgUuid` and `pendingEmailChange` (`newEmail`,
 `expiresAt`), and `null` for an unknown user (JSON:API `not_found`). Any other 404, e.g.
 `route_not_found` from a ZhylonID without these routes, counts as a failure.
 `emailVerified` is `true` only when the owner proved the address. Users created or synced

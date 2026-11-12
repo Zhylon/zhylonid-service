@@ -3,6 +3,15 @@
 All notable changes to this package are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/), versioning is semver.
 
+## [Unreleased]
+
+### Added
+- `ZhylonIdUser::$personalOrgUuid`: uuid of the user's personal organization (DECISION-033), stable for
+  the life of the user. Store it as `zhylon_org_id`. `null` if ZhylonID does not send it yet (before the
+  ZhylonID release with T1.1) or sends something that is not a uuid. Added as the last constructor
+  argument, so code that builds `ZhylonIdUser` itself keeps working.
+- `getSyncUsers()` passes `personal_org_uuid` per user through as ZhylonID sends it.
+
 ## [2.0.0] - 2026-10-25
 
 ZhylonID unavailability is no longer reported as "user does not exist". The package now
