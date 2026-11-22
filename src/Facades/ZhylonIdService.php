@@ -13,6 +13,10 @@ use Zhylon\ZhylonIdService\Contracts\ZhylonIdServiceContract;
  * @method static \Illuminate\Http\Client\Response get(string $endpoint, array $query = [])
  * @method static \Illuminate\Http\Client\Response post(string $endpoint, array $data = [])
  * @method static array<int, array<string, mixed>>|null getSyncUsers(array|\Illuminate\Support\Collection $usersToSync)
+ * @method static \Zhylon\ZhylonIdService\Data\ZhylonIdOrganization|null getOrganization(string $uuid)
+ * @method static \Illuminate\Support\Collection<int, \Zhylon\ZhylonIdService\Data\ZhylonIdOrganization>|null getUserOrganizations(string $zhylonId)
+ * @method static \Illuminate\Support\Collection<int, \Zhylon\ZhylonIdService\Data\OrganizationMember>|null getOrganizationMembers(string $uuid)
+ * @method static \Zhylon\ZhylonIdService\Data\OrganizationSyncReport|null syncOrganizations(array|\Illuminate\Support\Collection $organizations, bool $dryRun)
  *
  * @see \Zhylon\ZhylonIdService\Services\ZhylonIdManager
  */

@@ -10,6 +10,7 @@ namespace Zhylon\ZhylonIdService\Data;
  *
  * $personalOrgUuid is the uuid of the user's personal organization, stable for the life
  * of the user; store it as zhylon_org_id. Null only if ZhylonID does not send it yet.
+ * $personalOrgSlug is its slug (owned by ZhylonID, DECISION-034); null if not sent yet.
  */
 final readonly class ZhylonIdUser
 {
@@ -20,5 +21,6 @@ final readonly class ZhylonIdUser
         public bool $emailVerified,
         public ?PendingEmailChange $pendingEmailChange = null,
         public ?string $personalOrgUuid = null,
+        public ?string $personalOrgSlug = null,
     ) {}
 }

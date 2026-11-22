@@ -5,12 +5,30 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/), versioni
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-11-22
+
+Organizations owned by ZhylonID (DECISION-018) and their slugs (DECISION-034). No breaking changes.
+Needs a ZhylonID release with the internal organization endpoints, `personal_org_uuid` and slugs;
+with an older ZhylonID the new user fields are `null` and the organization methods fail as `unexpected_status`.
+
 ### Added
+- `ZhylonIdOrganizationsContract`, implemented by `ZhylonIdManager` and bound to the same instance
+  (also on the facade). A separate interface, so existing implementations and test doubles of
+  `ZhylonIdServiceContract` keep working:
+  - `getOrganization($uuid)`: `GET /api/internals/organizations/{uuid}`, `null` for an unknown or personal organization.
+  - `getUserOrganizations($zhylonId)`: the organizations of a user with the user's role, all pages.
+  - `getOrganizationMembers($uuid)`: owner and members (`zhylonId`, `role`), all pages.
+  - `syncOrganizations($organizations, $dryRun)`: one-time import, returns an `OrganizationSyncReport`
+    (`isClean()`, `resultFor()`, `organizationIdFor()`, `organizationSlug` per result). `provider`
+    defaults to `zhylonid-service.sync.provider`.
+- Data objects `ZhylonIdOrganization` (with `slug`), `OrganizationMember`, `OrganizationSyncReport`,
+  `OrganizationSyncResult`, `OrganizationSyncMemberResult` and enum `OrganizationSyncStatus`.
 - `ZhylonIdUser::$personalOrgUuid`: uuid of the user's personal organization (DECISION-033), stable for
-  the life of the user. Store it as `zhylon_org_id`. `null` if ZhylonID does not send it yet (before the
-  ZhylonID release with T1.1) or sends something that is not a uuid. Added as the last constructor
-  argument, so code that builds `ZhylonIdUser` itself keeps working.
-- `getSyncUsers()` passes `personal_org_uuid` per user through as ZhylonID sends it.
+  the life of the user. Store it as `zhylon_org_id`.
+- `ZhylonIdUser::$personalOrgSlug`: slug of the personal organization.
+- Both are `null` if ZhylonID does not send them yet or sends an invalid value, and are the last
+  constructor arguments, so code that builds `ZhylonIdUser` itself keeps working.
+- `getSyncUsers()` passes `personal_org_uuid` / `personal_org_slug` per user through as ZhylonID sends them.
 
 ## [2.0.0] - 2026-10-25
 

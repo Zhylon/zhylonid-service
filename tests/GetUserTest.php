@@ -125,3 +125,23 @@ it('returns null for a missing or invalid personal_org_uuid', function (array $a
     'not a uuid'                     => [['personal_org_uuid' => 'h:abc123']],
     'not a string'                   => [['personal_org_uuid' => 42]],
 ]);
+
+it('returns personal_org_slug when ZhylonID sends it (T17)', function () {
+    Http::fake(fakeToken() + [ZHYLON_USER_URL => Http::response(zhylonUserResponse([
+        'personal_org_slug' => 'jane-doe-2',
+    ]), 200)]);
+
+    expect(app(ZhylonIdServiceContract::class)->getUser('h:abc123')->personalOrgSlug)->toBe('jane-doe-2');
+});
+
+it('returns null for a missing or invalid personal_org_slug', function (array $attributes) {
+    Http::fake(fakeToken() + [ZHYLON_USER_URL => Http::response(zhylonUserResponse($attributes), 200)]);
+
+    expect(app(ZhylonIdServiceContract::class)->getUser('h:abc123')->personalOrgSlug)->toBeNull();
+})->with([
+    'missing (ZhylonID before T17)' => [[]],
+    'uppercase'                     => [['personal_org_slug' => 'Jane-Doe']],
+    'path characters'               => [['personal_org_slug' => '../admin']],
+    'too long'                      => [['personal_org_slug' => str_repeat('a', 49)]],
+    'not a string'                  => [['personal_org_slug' => 42]],
+]);
