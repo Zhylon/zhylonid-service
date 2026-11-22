@@ -136,8 +136,8 @@ if ($zhylonUser?->emailVerified) {
 }
 ```
 
-Both return `id`, `name`, `email`, `emailVerified` and `pendingEmailChange` (`newEmail`,
-`expiresAt`), and `null` for an unknown user (JSON:API `not_found`). Any other 404, e.g.
+Both return `id`, `name`, `email`, `emailVerified`, `personalOrgUuid`, `personalOrgSlug` and
+`pendingEmailChange` (`newEmail`, `expiresAt`), and `null` for an unknown user (JSON:API `not_found`). Any other 404, e.g.
 `route_not_found` from a ZhylonID without these routes, counts as a failure.
 `emailVerified` is `true` only when the owner proved the address. Users created or synced
 by a product start unverified, so **only trust `email` for account linking when
@@ -202,6 +202,60 @@ and stays unlinked, like every other conflict.
 
 Requires the configured `zhylonid-service.sync.user_model` to expose `id`, `name`, `email`,
 and the id column.
+
+### Organizations
+
+ZhylonID owns organizations, their members and the organization roles (`owner`, `admin`,
+`member`). Apps own product permissions and data and reference an organization by its
+`uuid`. The organization methods live on their own contract, implemented by the same
+service (and available on the facade):
+
+```php
+use Zhylon\ZhylonIdService\Contracts\ZhylonIdOrganizationsContract;
+
+public function __construct(private readonly ZhylonIdOrganizationsContract $organizations) {}
+
+$org     = $this->organizations->getOrganization($uuid);            // ?ZhylonIdOrganization
+$orgs    = $this->organizations->getUserOrganizations($zhylonId);   // ?Collection<ZhylonIdOrganization>, with ->role of that user
+$members = $this->organizations->getOrganizationMembers($uuid);     // ?Collection<OrganizationMember> (zhylonId, role)
+```
+
+- **Store the `uuid`** (e.g. as `zhylon_org_id`). Use `slug` for URLs only. Slugs are owned by
+  ZhylonID and globally unique: store them, **never generate your own**. `slug` is `null` only
+  for a ZhylonID that does not send slugs yet.
+- **Personal organizations never appear here.** Use `ZhylonIdUser::$personalOrgUuid` and
+  `$personalOrgSlug` from `getUser()` / `findUserByEmail()`.
+- `null` means unknown organization or user (JSON:API `not_found`). Lists fetch all pages.
+  `on_failure` applies as for the user methods (`allow` → `null` + warning).
+- Do not rely on a cached member list alone to revoke access.
+
+#### Importing existing organizations
+
+One-time, idempotent import keyed by `provider` + `external_id`. Organizations are never matched
+by name, and an existing organization is never changed: differences are only reported.
+
+```php
+$report = $this->organizations->syncOrganizations(
+    $teams->map(fn ($team) => [
+        'external_id'     => $team->id,          // provider defaults to zhylonid-service.sync.provider
+        'name'            => $team->name,
+        'owner_zhylon_id' => $team->owner->zhylon_id,
+        'members'         => $team->users->map(fn ($u) => ['zhylon_id' => $u->zhylon_id, 'role' => $u->pivot->role])->all(),
+    ]),
+    dryRun: true,
+);
+
+$report->isClean();                                  // no conflicts, skipped entries, unknown users or roles
+$report->resultFor('sitealarm', 42)?->status;        // OrganizationSyncStatus
+$report->resultFor('sitealarm', 42)?->organizationSlug;
+$report->organizationIdFor('sitealarm', 42);         // uuid to store as zhylon_org_id
+```
+
+Run with `dryRun: true`, sync missing users and add role mappings in ZhylonID until the report
+is clean, then run with `dryRun: false`. At most 100 organizations per call. A rejected document
+(422) throws `InvalidArgumentException` with the error codes and pointers.
+
+Requires a ZhylonID release with the internal organization endpoints and slugs.
 
 ## Security
 
