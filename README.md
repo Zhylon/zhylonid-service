@@ -1,4 +1,11 @@
-# ZhylonID Service
+[![ZhylonID Service][zhylonid-service-image]][zhylonid-service-edit-link]
+
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/zhylon/zhylonid-service.svg?style=flat-square)](https://packagist.org/packages/zhylon/zhylonid-service)
+[![Tests](https://img.shields.io/github/actions/workflow/status/Zhylon/zhylonid-service/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/Zhylon/zhylonid-service/actions/workflows/tests.yml)
+[![PHP Version](https://img.shields.io/packagist/dependency-v/zhylon/zhylonid-service/php?style=flat-square)](https://packagist.org/packages/zhylon/zhylonid-service)
+[![Laravel Version](https://img.shields.io/packagist/dependency-v/zhylon/zhylonid-service/illuminate%2Fsupport?label=laravel&style=flat-square)](https://packagist.org/packages/zhylon/zhylonid-service)
+[![MIT Licensed](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE)
+[![Total Downloads](https://img.shields.io/packagist/dt/zhylon/zhylonid-service.svg?style=flat-square)](https://packagist.org/packages/zhylon/zhylonid-service)
 
 Server-to-server Laravel client for the [ZhylonID](https://id.zhylon.net) identity API.
 Lets any Zhylon-ecosystem product check whether a ZhylonID account already exists for an
@@ -50,12 +57,12 @@ ZHYLONID_SERVICE_PROVIDER=sitealarm
 Credentials are issued per product in the ZhylonID admin panel, and the client must be
 allow-listed for the internal routes in ZhylonID. Scopes per call:
 
-| Call                                    | ZhylonID endpoint                                  | Scope                              |
-|-----------------------------------------|----------------------------------------------------|------------------------------------|
-| `userExists()`, `findUserByEmail()`     | `POST /api/internals/users/lookup`                 | `internal.read`                    |
-| `getUser()`                             | `GET /api/internals/users/{zhylon_id}`             | `internal.read`                    |
-| `changeEmail()`                         | `PATCH /api/internals/users/{zhylon_id}/email`     | `internal.write`                   |
-| `getSyncUsers()` / `zhylon-id:sync-users` | `POST /api/internals/providers/sync-users`       | `internal.read` **and** `internal.write` |
+| Call                                      | ZhylonID endpoint                              | Scope                                    |
+|-------------------------------------------|------------------------------------------------|------------------------------------------|
+| `userExists()`, `findUserByEmail()`       | `POST /api/internals/users/lookup`             | `internal.read`                          |
+| `getUser()`                               | `GET /api/internals/users/{zhylon_id}`         | `internal.read`                          |
+| `changeEmail()`                           | `PATCH /api/internals/users/{zhylon_id}/email` | `internal.write`                         |
+| `getSyncUsers()` / `zhylon-id:sync-users` | `POST /api/internals/providers/sync-users`     | `internal.read` **and** `internal.write` |
 
 v2 requires a ZhylonID release that includes the lookup and email endpoints.
 
@@ -66,9 +73,9 @@ decisions, so they never guess.
 On timeout, connection error, 401/403, 404, 5xx, a failed token request or an unparseable
 response:
 
-| `on_failure`      | Result                                                                  |
-|-------------------|-------------------------------------------------------------------------|
-| `block` (default) | throws `ZhylonIdUnavailableException` (`reason`, `status`)              |
+| `on_failure`      | Result                                                                                                                                                        |
+|-------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `block` (default) | throws `ZhylonIdUnavailableException` (`reason`, `status`)                                                                                                    |
 | `allow`           | `userExists()` → `false`, `findUserByEmail()` / `getUser()` → `null`, `changeEmail()` → status `unavailable`, `getSyncUsers()` → `null`, plus a `warning` log |
 
 Any other value counts as `block`. Only set `allow` deliberately: with it, a ZhylonID outage
@@ -280,3 +287,7 @@ vendor/bin/pest
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+
+[zhylonid-service-image]: https://socialify.git.ci/Zhylon/zhylonid-service/image?description=1&font=Raleway&issues=1&language=1&owner=1&pattern=Charlie%20Brown&pulls=1&stargazers=1&theme=Light
+[zhylonid-service-edit-link]: https://socialify.git.ci/Zhylon/zhylonid-service?description=1&font=Raleway&issues=1&language=1&owner=1&pattern=Charlie%20Brown&pulls=1&stargazers=1&theme=Light
