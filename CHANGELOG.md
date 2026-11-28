@@ -5,7 +5,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/), versioni
 
 ## [Unreleased]
 
-## [2.2.0] - unreleased
+## [2.2.0] - 2026-11-28
 
 "Sign in with GitHub" for apps with their own registration (DECISION-038). No breaking changes.
 Needs a ZhylonID release with `POST /api/internals/users/github/resolve`; with an older ZhylonID
