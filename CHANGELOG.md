@@ -5,6 +5,26 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/), versioni
 
 ## [Unreleased]
 
+## [2.2.0] - unreleased
+
+"Sign in with GitHub" for apps with their own registration (DECISION-038). No breaking changes.
+Needs a ZhylonID release with `POST /api/internals/users/github/resolve`; with an older ZhylonID
+the call fails as `unexpected_status` (404).
+
+### Added
+- `ZhylonIdGithubContract::resolveGithubUser($githubAccessToken)`, implemented by `ZhylonIdManager`
+  and bound to the same instance (also on the facade). A separate interface, so existing
+  implementations and test doubles of `ZhylonIdServiceContract` keep working.
+- Returns `GithubResolution` (`status`, `created`, `user`, `canSignIn()`, `requiresLogin()`) with enum
+  `GithubResolutionStatus` (`Existing`, `Linked`, `Created`, `RequiresLogin`). `user` is a `ZhylonIdUser`
+  as from the lookup, `null` only for `RequiresLogin`. The response is parsed strictly: an unknown
+  status, a `created` flag that does not match the status, or a missing user is a failure.
+- Exceptions `GithubTokenInvalidException` (422 `github_token_invalid`), `GithubEmailUnverifiedException`
+  (422 `github_email_unverified`) and `GithubUnavailableException` (503 `github_unavailable`), all extending
+  `GithubResolveException`. Thrown regardless of `on_failure`.
+- Any other failure follows `on_failure` like the lookup (`block` throws `ZhylonIdUnavailableException`,
+  `allow` returns `null` plus a warning). The GitHub token is never logged or put into exception messages.
+
 ## [2.1.0] - 2026-11-22
 
 Organizations owned by ZhylonID (DECISION-018) and their slugs (DECISION-034). No breaking changes.

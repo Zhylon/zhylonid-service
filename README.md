@@ -63,6 +63,7 @@ allow-listed for the internal routes in ZhylonID. Scopes per call:
 | `getUser()`                               | `GET /api/internals/users/{zhylon_id}`         | `internal.read`                          |
 | `changeEmail()`                           | `PATCH /api/internals/users/{zhylon_id}/email` | `internal.write`                         |
 | `getSyncUsers()` / `zhylon-id:sync-users` | `POST /api/internals/providers/sync-users`     | `internal.read` **and** `internal.write` |
+| `resolveGithubUser()`                     | `POST /api/internals/users/github/resolve`     | `internal.write`                         |
 
 v2 requires a ZhylonID release that includes the lookup and email endpoints.
 
@@ -263,6 +264,68 @@ is clean, then run with `dryRun: false`. At most 100 organizations per call. A r
 (422) throws `InvalidArgumentException` with the error codes and pointers.
 
 Requires a ZhylonID release with the internal organization endpoints and slugs.
+
+### Sign in with GitHub
+
+Apps with their own registration can offer "Sign in with GitHub" without the ZhylonID redirect
+(DECISION-038). **The app owns the GitHub OAuth flow** (e.g. Socialite) and requests the scope
+`user:email`. It passes only the GitHub access token; ZhylonID reads the GitHub ID and the
+verified primary email from GitHub itself and never trusts IDs or emails sent by the app.
+
+```php
+use Laravel\Socialite\Facades\Socialite;
+use Zhylon\ZhylonIdService\Contracts\ZhylonIdGithubContract;
+use Zhylon\ZhylonIdService\Exceptions\GithubUnavailableException;
+use Zhylon\ZhylonIdService\Exceptions\GithubTokenInvalidException;
+use Zhylon\ZhylonIdService\Exceptions\ZhylonIdUnavailableException;
+use Zhylon\ZhylonIdService\Exceptions\GithubEmailUnverifiedException;
+
+// redirect():  Socialite::driver('github')->scopes(['user:email'])->redirect();
+
+public function callback(ZhylonIdGithubContract $zhylonId)
+{
+    $token = Socialite::driver('github')->user()->token;
+
+    try {
+        $resolution = $zhylonId->resolveGithubUser($token);
+    } catch (GithubEmailUnverifiedException) {
+        return redirect()->route('register')->withErrors(['github' => __('Please verify your email at GitHub or register with email.')]);
+    } catch (GithubTokenInvalidException) {
+        return redirect()->route('login')->withErrors(['github' => __('GitHub sign-in failed. Please try again.')]);
+    } catch (GithubUnavailableException|ZhylonIdUnavailableException) {
+        return redirect()->route('login')->withErrors(['github' => __('GitHub sign-in is not possible right now. Please try again later.')]);
+    }
+
+    if ($resolution->requiresLogin()) {
+        // An account with this email exists but could not be linked: use the normal ZhylonID OAuth login.
+        return redirect()->route('login.zhylonid')->with('status', __('Please sign in with your ZhylonID account.'));
+    }
+
+    // existing, linked or created: log in locally with zhylon_id = $resolution->user->id
+    // and store ZhylonID's $resolution->user->email (it can differ from the address at GitHub).
+}
+```
+
+| `status`        | `created` | `user`         | App does                                       |
+|-----------------|-----------|----------------|------------------------------------------------|
+| `Existing`      | `false`   | `ZhylonIdUser` | log in                                         |
+| `Linked`        | `false`   | `ZhylonIdUser` | log in (GitHub was just linked to the account) |
+| `Created`       | `true`    | `ZhylonIdUser` | create the local user, log in                  |
+| `RequiresLogin` | `false`   | `null`         | log nobody in, redirect to the ZhylonID login  |
+
+- `user` has the same shape as `getUser()` / `findUserByEmail()`. Log in only when
+  `$resolution->canSignIn()` is `true`.
+- `GithubTokenInvalidException`, `GithubEmailUnverifiedException` and `GithubUnavailableException`
+  extend `GithubResolveException` (`errorCode()` returns ZhylonID's code). They are definite answers,
+  so they are thrown regardless of `on_failure`. Nothing was created or linked.
+- Everything else (unreachable, timeout, 401/403, 429, 5xx, a 404 from a ZhylonID without this route,
+  any other error code, an invalid answer) follows `on_failure` like the lookup: `block` throws
+  `ZhylonIdUnavailableException`, `allow` returns `null` plus a warning. Treat `null` as a failure,
+  never as a sign-in.
+- The token is sent in the request body only and never logged. ZhylonID does not store it.
+- The method lives on its own contract `ZhylonIdGithubContract` (same instance, also on the facade),
+  so existing implementations and test doubles of `ZhylonIdServiceContract` keep working.
+- Requires a ZhylonID release with the GitHub resolve endpoint and a client with scope `internal.write`.
 
 ## Security
 
