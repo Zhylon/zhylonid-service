@@ -16,19 +16,25 @@ use Illuminate\Http\Client\PendingRequest;
 use Zhylon\ZhylonIdService\Enums\OnFailure;
 use Zhylon\ZhylonIdService\Data\ZhylonIdUser;
 use Illuminate\Http\Client\ConnectionException;
+use Zhylon\ZhylonIdService\Data\GithubResolution;
 use Zhylon\ZhylonIdService\Data\EmailChangeResult;
 use Zhylon\ZhylonIdService\Data\OrganizationMember;
 use Zhylon\ZhylonIdService\Data\PendingEmailChange;
 use Zhylon\ZhylonIdService\Data\ZhylonIdOrganization;
 use Zhylon\ZhylonIdService\Data\OrganizationSyncReport;
 use Zhylon\ZhylonIdService\Data\OrganizationSyncResult;
+use Zhylon\ZhylonIdService\Enums\GithubResolutionStatus;
 use Zhylon\ZhylonIdService\Enums\OrganizationSyncStatus;
+use Zhylon\ZhylonIdService\Contracts\ZhylonIdGithubContract;
 use Zhylon\ZhylonIdService\Contracts\ZhylonIdServiceContract;
 use Zhylon\ZhylonIdService\Data\OrganizationSyncMemberResult;
+use Zhylon\ZhylonIdService\Exceptions\GithubUnavailableException;
+use Zhylon\ZhylonIdService\Exceptions\GithubTokenInvalidException;
 use Zhylon\ZhylonIdService\Contracts\ZhylonIdOrganizationsContract;
 use Zhylon\ZhylonIdService\Exceptions\ZhylonIdUnavailableException;
+use Zhylon\ZhylonIdService\Exceptions\GithubEmailUnverifiedException;
 
-class ZhylonIdManager implements ZhylonIdOrganizationsContract, ZhylonIdServiceContract
+class ZhylonIdManager implements ZhylonIdGithubContract, ZhylonIdOrganizationsContract, ZhylonIdServiceContract
 {
     /** page[size] for list endpoints (ZhylonID maximum). */
     private const PAGE_SIZE = 100;
@@ -155,6 +161,32 @@ class ZhylonIdManager implements ZhylonIdOrganizationsContract, ZhylonIdServiceC
             );
         } catch (ZhylonIdUnavailableException $e) {
             return $this->handleFailure($e, 'changeEmail', EmailChangeResult::unavailable());
+        }
+    }
+
+    public function resolveGithubUser(string $githubAccessToken): ?GithubResolution
+    {
+        $githubAccessToken = trim($githubAccessToken);
+
+        if ('' === $githubAccessToken) {
+            throw new InvalidArgumentException('A GitHub access token is required.');
+        }
+
+        try {
+            // Contract: zhylon-id docs/internal-api-github.md. The token goes in the body only,
+            // never in the URL, a log or an exception message.
+            $response = $this->send(
+                'post',
+                'api/internals/users/github/resolve',
+                ['data' => ['type' => 'github-resolutions', 'attributes' => ['access_token' => $githubAccessToken]]],
+                accept: [422, 503],
+            );
+
+            $this->rejectGithubResolution($response);
+
+            return $this->parseGithubResolution($response);
+        } catch (ZhylonIdUnavailableException $e) {
+            return $this->handleFailure($e, 'resolveGithubUser', null);
         }
     }
 
@@ -408,6 +440,66 @@ class ZhylonIdManager implements ZhylonIdOrganizationsContract, ZhylonIdServiceC
         }
 
         return $this->parseUser($response);
+    }
+
+    /**
+     * 422/503 from github/resolve: only the documented GitHub codes are definite answers.
+     * Any other code (validation_error, unknown) or a 503 without github_unavailable is a failure.
+     *
+     * @throws GithubTokenInvalidException|GithubEmailUnverifiedException|GithubUnavailableException|ZhylonIdUnavailableException
+     */
+    private function rejectGithubResolution(Response $response): void
+    {
+        $status = $response->status();
+
+        if (422 === $status) {
+            if ($this->hasErrorCode($response, 'github_token_invalid')) {
+                throw new GithubTokenInvalidException;
+            }
+
+            if ($this->hasErrorCode($response, 'github_email_unverified')) {
+                throw new GithubEmailUnverifiedException;
+            }
+
+            throw ZhylonIdUnavailableException::unexpectedStatus(422);
+        }
+
+        if (503 === $status) {
+            if ($this->hasErrorCode($response, 'github_unavailable')) {
+                throw new GithubUnavailableException;
+            }
+
+            throw ZhylonIdUnavailableException::serverError(503);
+        }
+    }
+
+    /**
+     * Strict: meta.status must be one of the four values, meta.created must match it, and
+     * data must be a user for every status except requires_login (where it must be null).
+     *
+     * @throws ZhylonIdUnavailableException
+     */
+    private function parseGithubResolution(Response $response): GithubResolution
+    {
+        $value = $response->json('meta.status');
+        $status = is_string($value) ? GithubResolutionStatus::tryFrom($value) : null;
+        $created = $response->json('meta.created');
+
+        if (null === $status
+            || ! is_bool($created)
+            || $created !== (GithubResolutionStatus::Created === $status)) {
+            throw ZhylonIdUnavailableException::invalidResponse($response->status());
+        }
+
+        if (GithubResolutionStatus::RequiresLogin === $status) {
+            if (null !== $response->json('data')) {
+                throw ZhylonIdUnavailableException::invalidResponse($response->status());
+            }
+
+            return new GithubResolution($status, false, null);
+        }
+
+        return new GithubResolution($status, $created, $this->parseUser($response));
     }
 
     /**
